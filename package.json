@@ -20,7 +20,12 @@
     "docs:preview": "vitepress preview docs",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "bun run build && bun run --filter '@reliquary/event-bus' release:npm && bun run --filter '@reliquary/event-bus-react' release:npm && bun run --filter '@reliquary/eslint-config' release:npm && bun run --filter '@reliquary/eslint-config-react' release:npm"
+    "verify": "bun run build && bun run typecheck && bun run lint && bun run test && bun run check:exports",
+    "release:all": "bun run verify && RELIQUARY_RELEASE=1 bun run --filter '@reliquary/event-bus' release:npm && RELIQUARY_RELEASE=1 bun run --filter '@reliquary/event-bus-react' release:npm && RELIQUARY_RELEASE=1 bun run --filter '@reliquary/eslint-config' release:npm && RELIQUARY_RELEASE=1 bun run --filter '@reliquary/eslint-config-react' release:npm",
+    "release:event-bus": "bun run verify && RELIQUARY_RELEASE=1 bun run --filter '@reliquary/event-bus' release:npm",
+    "release:event-bus-react": "bun run verify && RELIQUARY_RELEASE=1 bun run --filter '@reliquary/event-bus-react' release:npm",
+    "release:eslint-config": "bun run verify && RELIQUARY_RELEASE=1 bun run --filter '@reliquary/eslint-config' release:npm",
+    "release:eslint-config-react": "bun run verify && RELIQUARY_RELEASE=1 bun run --filter '@reliquary/eslint-config-react' release:npm"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
