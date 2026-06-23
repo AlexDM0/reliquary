@@ -1,6 +1,6 @@
 {
   "name": "@reliquary/event-bus",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "A tiny, fully type-safe event bus with optional, swappable shared state. Zero dependencies, ships ESM + CJS.",
   "type": "module",
   "license": "MIT",

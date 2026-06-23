@@ -1,6 +1,6 @@
 {
   "name": "@reliquary/event-bus-react",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "React 18/19 hooks for @reliquary/event-bus — subscribe to events and shared state, bound to your own typed bus instance.",
   "type": "module",
   "license": "MIT",

@@ -1,5 +1,16 @@
 # @reliquary/event-bus-react
 
+## 1.0.0
+
+### Major Changes
+
+- First stable release. Promotes the event-bus core and its React hooks to 1.0.0, locking in the public API and the `^1.0.0` peer range between them.
+
+### Patch Changes
+
+- Updated dependencies
+  - @reliquary/event-bus@1.0.0
+
 ## 0.3.0
 
 ### Minor Changes

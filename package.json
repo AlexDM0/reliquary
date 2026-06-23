@@ -20,7 +20,7 @@
     "docs:preview": "vitepress preview docs",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "bun run build && bun run --filter '@reliquary/event-bus' release:npm && bun run --filter '@reliquary/event-bus-react' release:npm"
+    "release": "bun run build && bun run --filter '@reliquary/event-bus' release:npm && bun run --filter '@reliquary/event-bus-react' release:npm && bun run --filter '@reliquary/eslint-config' release:npm && bun run --filter '@reliquary/eslint-config-react' release:npm"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",

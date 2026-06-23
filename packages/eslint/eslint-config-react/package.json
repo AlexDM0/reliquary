@@ -1,6 +1,6 @@
 {
   "name": "@reliquary/eslint-config-react",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "React + Jest + Testing Library ESLint rules — the React layer for @reliquary/eslint-config.",
   "type": "module",
   "license": "MIT",

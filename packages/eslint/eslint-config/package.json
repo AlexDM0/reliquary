@@ -1,6 +1,6 @@
 {
   "name": "@reliquary/eslint-config",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Shareable, framework-agnostic ESLint 9 flat config — TypeScript, stylistic and import-hygiene rules. Add @reliquary/eslint-config-react for React projects.",
   "type": "module",
   "license": "MIT",

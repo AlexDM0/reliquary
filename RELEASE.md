@@ -1,7 +1,11 @@
 # Releasing
 
-How to cut a release of `@reliquary/event-bus` and `@reliquary/event-bus-react`. Releases are
-published **from a local machine** (there is no CI publish workflow).
+How to cut a release of the `@reliquary` packages:
+
+- **event-bus family** — `@reliquary/event-bus`, then `@reliquary/event-bus-react` (peers on core).
+- **eslint family** — `@reliquary/eslint-config`, then `@reliquary/eslint-config-react` (peers on the base config).
+
+Releases are published **from a local machine** (there is no CI publish workflow).
 
 ## Prerequisites
 
@@ -29,29 +33,26 @@ bun run version-packages
 This consumes the changesets, bumps versions, and writes each package's
 `CHANGELOG.md`. Review the diff and commit it.
 
-> **Pre-1.0 caveat.** While `@reliquary/event-bus` is below `1.0.0`, a *minor* bump to it
-> makes changesets want to *major*-bump `@reliquary/event-bus-react` — a `^0.x` peer range
-> cannot absorb a `0.x` minor, so it is treated as breaking. After versioning, check
-> react's version and correct it to match if needed. This stops once core reaches
-> `1.0.0` (the config sets `onlyUpdatePeerDependentsWhenOutOfRange`).
-
 ## 3. Publish
 
 ```sh
 bun run release
 ```
 
-This builds both packages, then publishes **core first, then react** with
-`bun publish`. `bun publish` rewrites the `workspace:` protocol to the real version
-(e.g. `workspace:^` → `^0.2.0`), and `publishConfig.access: "public"` publishes the
-scoped packages publicly.
+This builds the event-bus packages, then publishes all four with `bun publish` in
+dependency order: `@reliquary/event-bus` → `@reliquary/event-bus-react`, then
+`@reliquary/eslint-config` → `@reliquary/eslint-config-react`. `bun publish` rewrites the
+`workspace:` protocol to the real version (e.g. `workspace:^` → `^1.0.0`), and each
+package's `publishConfig.access: "public"` publishes the scoped packages publicly.
 
-If your npm account requires a one-time password, publish the two manually:
+If your npm account requires a one-time password, publish them manually in the same order:
 
 ```sh
 bun run build
-cd packages/event-bus/event-bus       && bun publish --otp=<code> && cd -
-cd packages/event-bus/event-bus-react && bun publish --otp=<code> && cd -
+cd packages/event-bus/event-bus        && bun publish --otp=<code> && cd -
+cd packages/event-bus/event-bus-react  && bun publish --otp=<code> && cd -
+cd packages/eslint/eslint-config       && bun publish --otp=<code> && cd -
+cd packages/eslint/eslint-config-react && bun publish --otp=<code> && cd -
 ```
 
 ## 4. Verify
@@ -59,14 +60,19 @@ cd packages/event-bus/event-bus-react && bun publish --otp=<code> && cd -
 ```sh
 npm view @reliquary/event-bus
 npm view @reliquary/event-bus-react
+npm view @reliquary/eslint-config
+npm view @reliquary/eslint-config-react
 bunx @arethetypeswrong/cli @reliquary/event-bus
 bunx @arethetypeswrong/cli @reliquary/event-bus-react
 ```
 
 ## Notes
 
-- `dist/` is gitignored and `files: ["dist"]`, so packages must be built before
-  publishing — `bun run release` handles this.
-- Core must publish before react (peer dependency); the `release` script enforces the
-  order.
+- The event-bus packages build to `dist/` (gitignored, `files: ["dist"]`), so they must be
+  built before publishing — `bun run release` handles this. The eslint packages have no
+  build step (they ship `index.js` directly).
+- Publish order matters: each family's base package must publish before the package that
+  peers on it (`event-bus` before `event-bus-react`, `eslint-config` before
+  `eslint-config-react`). The `release` script enforces the order.
 - Publishing does not require a Git tag; tag and push however you prefer.
+</content>
