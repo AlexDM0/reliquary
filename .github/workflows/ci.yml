@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build, typecheck & verify packaging
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun run build
+      - run: bun run typecheck
+      - run: bun run check:exports
+      - name: Test core
+        run: bun run --filter '@reliquary/event-bus' test
+
+  react:
+    name: React ${{ matrix.react }} hook tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        react: ['18', '19']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: Build core (react peer-depends on it)
+        run: bun run --filter '@reliquary/event-bus' build
+      - name: Pin React ${{ matrix.react }}
+        working-directory: packages/event-bus/event-bus-react
+        run: bun add --dev react@${{ matrix.react }} react-dom@${{ matrix.react }} @types/react@${{ matrix.react }} @types/react-dom@${{ matrix.react }}
+      - name: Test hooks
+        run: bun run --filter '@reliquary/event-bus-react' test

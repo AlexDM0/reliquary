@@ -1,0 +1,48 @@
+#!/usr/bin/env sh
+#
+# Keeps documentation in lockstep with the code.
+#
+#   1. Blocks a commit that changes package source / API but updates no docs.
+#   2. Runs build + typecheck + lint + test when code changed, so the behaviour
+#      and examples the docs describe stay valid.
+#
+# Bypass deliberately with `SKIP_DOC_CHECK=1 git commit …` or `git commit --no-verify`.
+
+set -e
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$STAGED" ] && exit 0
+
+# Source or package manifest changes that should be reflected in docs.
+CODE_CHANGED=$(printf '%s\n' "$STAGED" | grep -E '^packages/[^/]+/[^/]+/(src/|package\.json)' || true)
+
+# Anything that counts as documentation (CHANGELOG covers changeset version bumps).
+DOCS_CHANGED=$(printf '%s\n' "$STAGED" | grep -E '((^|/)docs/|(^|/)README\.md$|(^|/)CLAUDE\.md$|(^|/)CHANGELOG\.md$)' || true)
+
+if [ -n "$CODE_CHANGED" ] && [ -z "$DOCS_CHANGED" ] && [ -z "$SKIP_DOC_CHECK" ]; then
+  echo "✖ pre-commit: package source/API changed but no documentation was updated."
+  echo ""
+  echo "  Update the affected docs so they stay accurate, then re-stage:"
+  echo "    • packages/*/README.md"
+  echo "    • docs/*.md  (guides + mermaid diagrams — re-validate any you touch)"
+  echo "    • README.md, CLAUDE.md"
+  echo ""
+  echo "  Changed code:"
+  printf '%s\n' "$CODE_CHANGED" | sed 's/^/      /'
+  echo ""
+  echo "  If this change genuinely needs no doc update, bypass with:"
+  echo "    SKIP_DOC_CHECK=1 git commit …   (or  git commit --no-verify)"
+  exit 1
+fi
+
+# Verify the code the docs describe still builds and passes — only when code changed.
+if [ -n "$CODE_CHANGED" ]; then
+  echo "▶ pre-commit: verifying packages (build → typecheck → lint → test)…"
+  bun run build
+  bun run typecheck
+  bun run lint
+  bun run test
+  echo "✓ pre-commit: packages verified."
+fi
+
+exit 0

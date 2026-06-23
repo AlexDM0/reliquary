@@ -1,0 +1,36 @@
+{
+  "name": "reliquary",
+  "private": true,
+  "type": "module",
+  "author": "Alex de Mulder",
+  "workspaces": [
+    "packages/*/*"
+  ],
+  "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
+    "build:core": "bun run --filter '@reliquary/event-bus' build",
+    "build:react": "bun run --filter '@reliquary/event-bus-react' build",
+    "build": "bun run build:core && bun run build:react",
+    "typecheck": "bun run --filter '*' typecheck",
+    "test": "bun run --filter '*' test",
+    "lint": "eslint packages",
+    "check:exports": "bun run --filter '*' check:exports",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "bun run build && bun run --filter '@reliquary/event-bus' release:npm && bun run --filter '@reliquary/event-bus-react' release:npm"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.0",
+    "@reliquary/eslint-config": "workspace:*",
+    "@reliquary/eslint-config-react": "workspace:*",
+    "@types/bun": "latest",
+    "eslint": "^9.0.0",
+    "mermaid": "^11.15.0",
+    "typescript": "^5",
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-mermaid": "^2.0.17"
+  }
+}
