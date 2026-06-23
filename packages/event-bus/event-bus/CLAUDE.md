@@ -24,7 +24,20 @@ the `unknown` escape hatch, events-are-lossy) live one level up in
 - **The delivery set is fixed when an emit starts.** A listener added during an emit is
   **not** called for that emit (it becomes active from the next); a listener removed
   before it is reached is skipped. Don't "fix" added-mid-emit listeners to fire in the
-  same emit — the snapshot-then-recheck loop in `emit` is deliberate.
+  same emit — the snapshot-then-recheck loop in `dispatch` is deliberate.
+- **Re-entrant emits are deferred, and order is guaranteed but must not be relied on.**
+  Emitting a topic from inside one of its own listeners does not recurse: while a topic is
+  mid-fire, a re-entrant `emit` is scheduled for a later tick with `setImmediate`, so the
+  current fire completes and other synchronous code runs first. Deferred emits run in the
+  order they were made, so the bus *does* deliver deterministically — but **relying on
+  cross-subscriber ordering is an anti-pattern**: a subscriber must not assume anything
+  about other subscribers, and an emitter must not know *who* subscribes beyond handing
+  the bus anonymous callbacks. An infinite re-emit loop is the caller's problem, not the
+  bus's — we don't guard against it. Deferral uses `setImmediate` directly (a Node/Bun
+  global), so re-entrant emits require a `setImmediate`-providing runtime. (Note: a
+  re-entrant emit already scheduled for a later tick is not cancelled by a `reset()` or by
+  a fail-fast throw in the current fire; it fires against whatever the bus looks like
+  then.)
 
 ## Shared state
 

@@ -117,6 +117,51 @@ describe('EventBus', () => {
   });
 
 
+  describe('re-entrant emit', () => {
+    test('defers a re-entrant emit on a firing topic, preserving order', async () => {
+      const order: string[] = [];
+      eventBus.on('count', (n) => {
+        order.push(`a:${n}`);
+        if (n === 1) {
+          eventBus.emit('count', 2); // emitted while 'count' is mid-fire
+        }
+      });
+      eventBus.on('count', (n) => {
+        order.push(`b:${n}`);
+      });
+
+      eventBus.emit('count', 1);
+
+      // emit(1) fully delivers to both listeners before the deferred emit(2) runs —
+      // the two fires never interleave.
+      expect(order).toEqual(['a:1', 'b:1']);
+
+      await new Promise<void>((resolve) => { setImmediate(resolve); });
+
+      // The deferred emit then fires, in order.
+      expect(order).toEqual(['a:1', 'b:1', 'a:2', 'b:2']);
+    });
+
+    test('lets synchronous code run before the deferred emit', async () => {
+      const order: string[] = [];
+      eventBus.on('count', (n) => {
+        order.push(`fire:${n}`);
+        if (n === 1) {
+          eventBus.emit('count', 2);
+        }
+      });
+
+      eventBus.emit('count', 1);
+      order.push('after-emit'); // synchronous code after the top-level emit returns
+
+      expect(order).toEqual(['fire:1', 'after-emit']);
+
+      await new Promise<void>((resolve) => { setImmediate(resolve); });
+      expect(order).toEqual(['fire:1', 'after-emit', 'fire:2']);
+    });
+  });
+
+
   describe('unsubscribe', () => {
     test('returns a function that removes the subscriber', () => {
       const cb = mock();

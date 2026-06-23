@@ -57,6 +57,13 @@ Delivery is **fail-fast**: a listener that throws aborts the loop — later list
 not called and the error propagates to whoever called `emit`. Errors are not caught or
 isolated; shared state (synced before delivery) is already updated when this happens.
 
+Emitting the **same topic** from inside one of its listeners is **deferred**: while a
+topic is mid-fire, a re-entrant `emit` on it is scheduled for a later tick with
+`setImmediate` instead of recursing. The current fire finishes, any pending synchronous
+code runs, then the deferred emit fires — in the order the emits were made. This keeps
+the call stack flat and the order deterministic. Emitting a *different* topic from a
+listener still runs synchronously.
+
 ## Shared-state lifecycle
 
 A topic's shared state moves through three observable states. `get` succeeds only

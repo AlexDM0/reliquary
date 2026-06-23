@@ -91,6 +91,10 @@ remaining listeners are not invoked and the error propagates out of `emit` to th
 caller (shared state, synced before delivery, has already been updated). Keep listeners
 total, or guard inside them, if one listener must not be able to starve the others.
 
+Re-emitting the **same topic** from within its own listener is **deferred** to a later
+tick with `setImmediate` rather than recursing — the in-flight fire completes first, then
+the deferred emit runs, in order. See [the emit flow](./event-flow.md#emit).
+
 > **Events are lossy.** An emit only reaches listeners subscribed at that moment — a
 > consumer that subscribes later will not see it. When a late consumer must still get
 > the value, use [shared state](#shared-state) instead. See [Concepts](./concepts.md#events-are-lossy).
