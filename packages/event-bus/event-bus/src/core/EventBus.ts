@@ -96,11 +96,16 @@ export class EventBus<EventMap> {
     }
 
     if (subscribers) {
-      // Iterating the Map directly is safe: a subscriber that unsubscribes
-      // (itself or another) while handling this event is removed from the Map,
-      // and an entry deleted before it is reached is skipped — no copy needed.
-      for (const callback of subscribers.values()) {
-        callback(eventData);
+      // Snapshot the subscriber ids so a listener that subscribes to this same
+      // topic while handling the event is not invoked for the in-flight emit
+      // (it becomes active from the next emit). Re-check each id against the live
+      // Map before calling, so a listener removed earlier in this same emit —
+      // by itself or another — is still skipped.
+      for (const id of [...subscribers.keys()]) {
+        const callback = subscribers.get(id);
+        if (callback) {
+          callback(eventData);
+        }
       }
     }
   }

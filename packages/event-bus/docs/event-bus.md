@@ -71,7 +71,8 @@ off(); // stop listening
 ```
 
 Unsubscribing is idempotent and safe to call during an emit — a listener may even
-remove itself while handling an event.
+remove itself while handling an event. Subscribing during an emit is also safe; the new
+listener starts from the next emit, not the one in flight.
 
 ## Emitting
 

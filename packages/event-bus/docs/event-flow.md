@@ -48,8 +48,10 @@ flowchart TD
   LOOP --> DONE
 ```
 
-Listeners may unsubscribe themselves or others during an emit; the iteration is safe
-because a removed listener is simply skipped if it has not yet been reached.
+Listeners may subscribe or unsubscribe themselves or others during an emit; the
+iteration is safe. A listener removed before it is reached is simply skipped, and a
+listener added mid-emit is not invoked for the in-flight emit — it becomes active from
+the next emit. The delivery set is fixed when the emit starts.
 
 ## Shared-state lifecycle
 

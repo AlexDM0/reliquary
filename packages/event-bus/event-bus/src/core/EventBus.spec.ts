@@ -81,6 +81,23 @@ describe('EventBus', () => {
 
       expect(cb).toHaveBeenCalledWith(0);
     });
+
+    test('a subscriber added during an emit is not called for that emit', () => {
+      const calls: string[] = [];
+      const late = mock();
+      eventBus.on('count', () => {
+        calls.push('first');
+        eventBus.on('count', late); // subscribes mid-emit
+      });
+
+      eventBus.emit('count', 1);
+      expect(calls).toEqual(['first']);
+      expect(late).not.toHaveBeenCalled(); // not delivered this emit
+
+      eventBus.emit('count', 2);
+      expect(late).toHaveBeenCalledTimes(1); // active from the next emit on
+      expect(late).toHaveBeenCalledWith(2);
+    });
   });
 
 
