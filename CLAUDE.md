@@ -126,12 +126,14 @@ Doc ↔ code map:
 | A family's package set, structure, or overview | the family README (`packages/<family>/README.md`) |
 | An accepted design decision (new, changed, or removed) | the right-level `CLAUDE.md` — a cross-cutting invariant in the family `packages/<family>/CLAUDE.md`, a package-specific one in that package's `CLAUDE.md`, monorepo-wide guidance in the root `CLAUDE.md` |
 | Package names, exports, deps, build, tooling | `README.md`, `packages/event-bus/docs/architecture.md`, the relevant package README, **the relevant `CLAUDE.md`** (root, family, or package) |
+| The release/publish flow — `release*` scripts, `release:npm`, versioning, tagging, publish gate | `RELEASE.md` |
 | Any Mermaid diagram | Re-validate it — every diagram must render. |
 
 A **pre-commit hook** (`.githooks/pre-commit`, wired via `core.hooksPath`) enforces this:
 a commit that touches `packages/*/*/src` or a `package.json` but updates no documentation is
 blocked, and the hook runs `build → typecheck → lint → test` so documented behaviour stays
-valid. Bypass only deliberately with `SKIP_DOC_CHECK=1 git commit …` or `git commit --no-verify`.
+valid. It counts a `docs/` file, `README.md`, `RELEASE.md`, `CLAUDE.md`, or `CHANGELOG.md`
+as documentation. Bypass only deliberately with `SKIP_DOC_CHECK=1 git commit …` or `git commit --no-verify`.
 A readability-only or test-only commit that changes no documented behaviour is a legitimate
 `SKIP_DOC_CHECK=1` case (the hook still runs build → typecheck → lint → test).
 After updating any doc, re-read it to confirm it matches the current code.

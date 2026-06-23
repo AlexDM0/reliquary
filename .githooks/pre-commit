@@ -17,7 +17,7 @@ STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
 CODE_CHANGED=$(printf '%s\n' "$STAGED" | grep -E '^packages/[^/]+/[^/]+/(src/|package\.json)' || true)
 
 # Anything that counts as documentation (CHANGELOG covers changeset version bumps).
-DOCS_CHANGED=$(printf '%s\n' "$STAGED" | grep -E '((^|/)docs/|(^|/)README\.md$|(^|/)CLAUDE\.md$|(^|/)CHANGELOG\.md$)' || true)
+DOCS_CHANGED=$(printf '%s\n' "$STAGED" | grep -E '((^|/)docs/|(^|/)README\.md$|(^|/)RELEASE\.md$|(^|/)CLAUDE\.md$|(^|/)CHANGELOG\.md$)' || true)
 
 if [ -n "$CODE_CHANGED" ] && [ -z "$DOCS_CHANGED" ] && [ -z "$SKIP_DOC_CHECK" ]; then
   echo "✖ pre-commit: package source/API changed but no documentation was updated."
