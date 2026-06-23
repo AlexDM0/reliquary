@@ -28,10 +28,15 @@
     "release:eslint-config-react": "bun run verify && RELIQUARY_RELEASE=1 bun run --filter '@reliquary/eslint-config-react' release:npm"
   },
   "devDependencies": {
+    "@braintree/sanitize-url": "^7.1.2",
     "@changesets/cli": "^2.27.0",
     "@reliquary/eslint-config": "workspace:*",
     "@reliquary/eslint-config-react": "workspace:*",
     "@types/bun": "latest",
+    "cytoscape": "^3.34.0",
+    "cytoscape-cose-bilkent": "^4.1.0",
+    "dayjs": "^1.11.21",
+    "debug": "^4.4.3",
     "eslint": "^9.0.0",
     "mermaid": "^11.15.0",
     "typescript": "^5",
