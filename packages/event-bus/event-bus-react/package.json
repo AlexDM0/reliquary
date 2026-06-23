@@ -1,0 +1,58 @@
+{
+  "name": "@reliquary/event-bus-react",
+  "version": "0.3.0",
+  "description": "React 18/19 hooks for @reliquary/event-bus — subscribe to events and shared state, bound to your own typed bus instance.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Alex de Mulder",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.cts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "check:exports": "attw --pack . && publint",
+    "release:npm": "bun publish"
+  },
+  "peerDependencies": {
+    "@reliquary/event-bus": "workspace:^",
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@reliquary/event-bus": "workspace:*",
+    "@arethetypeswrong/cli": "^0.18.0",
+    "@happy-dom/global-registrator": "^15.0.0",
+    "@testing-library/react": "^16.0.0",
+    "@types/react": "^19.0.0",
+    "publint": "^0.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tsdown": "^0.15.6",
+    "typescript": "^5"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
