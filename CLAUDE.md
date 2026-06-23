@@ -127,6 +127,7 @@ Doc ↔ code map:
 | An accepted design decision (new, changed, or removed) | the right-level `CLAUDE.md` — a cross-cutting invariant in the family `packages/<family>/CLAUDE.md`, a package-specific one in that package's `CLAUDE.md`, monorepo-wide guidance in the root `CLAUDE.md` |
 | Package names, exports, deps, build, tooling | `README.md`, `packages/event-bus/docs/architecture.md`, the relevant package README, **the relevant `CLAUDE.md`** (root, family, or package) |
 | The release/publish flow — `release*` scripts, `release:npm`, versioning, tagging, publish gate | `RELEASE.md` |
+| The docs toolchain — VitePress config (`docs/.vitepress/config.mts`), custom theme (`docs/.vitepress/theme/`), or its build/plugin deps | Verify **both** `bun run docs:dev` *and* `bun run docs:build` work — a dev-only `optimizeDeps` resolution failure (e.g. Bun not hoisting a plugin's transitive deps to top-level `node_modules`) yields a white screen in dev while the build still passes, so checking only one hides the bug |
 | Any Mermaid diagram | Re-validate it — every diagram must render. |
 
 A **pre-commit hook** (`.githooks/pre-commit`, wired via `core.hooksPath`) enforces this:
