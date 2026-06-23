@@ -18,7 +18,7 @@ export default withMermaid(defineConfig({
     '**/README.md',
     '**/CHANGELOG.md',
     'RELEASE.md',
-    'CLAUDE.md',
+    '**/CLAUDE.md',
     'review.md',
   ],
   // Map the umbrella landing and each family's in-package docs to clean URLs.
