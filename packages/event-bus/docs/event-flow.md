@@ -53,6 +53,10 @@ iteration is safe. A listener removed before it is reached is simply skipped, an
 listener added mid-emit is not invoked for the in-flight emit — it becomes active from
 the next emit. The delivery set is fixed when the emit starts.
 
+Delivery is **fail-fast**: a listener that throws aborts the loop — later listeners are
+not called and the error propagates to whoever called `emit`. Errors are not caught or
+isolated; shared state (synced before delivery) is already updated when this happens.
+
 ## Shared-state lifecycle
 
 A topic's shared state moves through three observable states. `get` succeeds only

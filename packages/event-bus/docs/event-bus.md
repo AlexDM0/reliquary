@@ -86,6 +86,11 @@ Every listener for the topic is invoked synchronously, in subscription order. Se
 [the emit flow](./event-flow.md#emit) for the exact sequence, including how shared
 state is kept in sync.
 
+Delivery is **fail-fast**: listener errors are not isolated. If a listener throws, the
+remaining listeners are not invoked and the error propagates out of `emit` to the
+caller (shared state, synced before delivery, has already been updated). Keep listeners
+total, or guard inside them, if one listener must not be able to starve the others.
+
 > **Events are lossy.** An emit only reaches listeners subscribed at that moment — a
 > consumer that subscribes later will not see it. When a late consumer must still get
 > the value, use [shared state](#shared-state) instead. See [Concepts](./concepts.md#events-are-lossy).
@@ -129,6 +134,12 @@ const persisted: SharedStateManager<AppEvents> = {
 
 export const EventBus = createEventBus<AppEvents>({ state: persisted });
 ```
+
+> **`has` is load-bearing.** On every `emit`, the bus calls `state.has(topic)` and only
+> `set`s the value when it returns `true` — that is how `emit` keeps registered topics in
+> sync without ever starting to track a new one. A custom manager must return `true` for
+> every topic it treats as tracked (including ones populated via `set`), otherwise `emit`
+> will silently skip syncing them.
 
 ## Resetting
 

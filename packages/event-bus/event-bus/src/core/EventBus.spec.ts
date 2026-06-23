@@ -98,6 +98,18 @@ describe('EventBus', () => {
       expect(late).toHaveBeenCalledTimes(1); // active from the next emit on
       expect(late).toHaveBeenCalledWith(2);
     });
+
+    test('is fail-fast: a throwing listener aborts delivery and propagates', () => {
+      const before = mock();
+      const after  = mock();
+      eventBus.on('count', before);
+      eventBus.on('count', () => { throw new Error('boom'); });
+      eventBus.on('count', after);
+
+      expect(() => eventBus.emit('count', 1)).toThrow('boom');
+      expect(before).toHaveBeenCalledWith(1); // listeners before the throw ran
+      expect(after).not.toHaveBeenCalled();   // listeners after the throw are skipped
+    });
   });
 
 

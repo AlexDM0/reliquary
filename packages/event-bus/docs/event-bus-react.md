@@ -93,6 +93,10 @@ guaranteed value, so you skip the null checks without prop-drilling a default.
   before it that passed one, or `useSharedStateInitializer`). If the topic has no value
   yet, the hook **throws** — a missing initializer fails fast instead of reading `undefined`.
 
+`initialValue` is a **once-per-mount seed**, not a controlled prop. It is read only on
+mount; passing a different `initialValue` on a later render is ignored. After the seed,
+the value is driven entirely by emits and the setter. Remount with a `key` to re-seed.
+
 The `topic` is fixed for the component's lifetime. Unlike `useEvent`/`useEventCallback`,
 this hook does not re-bind when `topic` changes, so passing a different topic on a later
 render **throws** rather than silently returning the previous topic's value. Remount with
@@ -143,6 +147,13 @@ EventBus.emit(...) → listener fires → setState → React re-renders
 
 The subscription is created in an effect and torn down on unmount or when `topic`
 changes. The full data flow is in [React data flow](./react-data-flow.md).
+
+> **Shared state is retained, not cleaned up.** Only the *subscription* is torn down on
+> unmount — the value in `EventBus.state` is deliberately left in place (removing it on
+> unmount would race component creation/teardown). For a fixed set of topics this is
+> harmless. But with **dynamically-keyed topics** — e.g. `useSharedState('item:' + id)`
+> for many ids — the store grows unbounded over the bus's lifetime. Clear them yourself
+> when done (`EventBus.state.reset(topic)`), or scope them to a shorter-lived bus.
 
 ## React 18 and 19
 

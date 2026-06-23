@@ -16,7 +16,14 @@ export interface SharedStateManager<EventMap> {
   /** Store (or overwrite) the value for `topic`. */
   set<T extends keyof EventMap>(topic: T, value: EventMap[T]): void;
 
-  /** Whether `topic` currently has a stored value. */
+  /**
+   * Whether `topic` currently has a stored value. This is load-bearing: `emit`
+   * calls `has(topic)` to decide whether to sync the emitted value into shared
+   * state, and only `set`s when it returns `true` (so `emit` never starts tracking
+   * a topic on its own). A custom manager must therefore return `true` for every
+   * topic it considers tracked — including ones seeded by `set` — or those topics
+   * will never be kept in sync by `emit`.
+   */
   has(topic: keyof EventMap): boolean;
 
   /** Clear a single topic's value, or — when called with no argument — all of them. */

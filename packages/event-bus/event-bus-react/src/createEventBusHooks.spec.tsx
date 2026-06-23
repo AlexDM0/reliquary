@@ -217,6 +217,24 @@ describe('useSharedState', () => {
     expect(eventBus.state.get('count')).toBe(5);
   });
 
+  test('initialValue seeds once; later changes to it are ignored, events take over', () => {
+    const { eventBus, useSharedState } = setup();
+    const { result, rerender } = renderHook(
+      ({ init }: { init: number }) => useSharedState('count', init),
+      { initialProps: { init: 1 } },
+    );
+    expect(result.current[0]).toBe(1);
+
+    // A new initialValue on a later render does not re-seed — it is a once-per-mount seed.
+    rerender({ init: 99 });
+    expect(result.current[0]).toBe(1);
+    expect(eventBus.state.get('count')).toBe(1);
+
+    // After the initial seed the value is driven by events, not initialValue.
+    act(() => eventBus.emit('count', 7));
+    expect(result.current[0]).toBe(7);
+  });
+
   test('setter persists to eventBus.state and updates the value', () => {
     const { eventBus, useSharedState } = setup();
     const { result } = renderHook(() => useSharedState('count', 0));

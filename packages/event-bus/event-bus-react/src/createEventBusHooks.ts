@@ -98,6 +98,11 @@ export function createEventBusHooks<EventMap>(EventBus: EventBus<EventMap>) {
    * that passed an `initialValue`, or by {@link useSharedStateInitializer}. If the
    * topic has no value when read, the hook throws.
    *
+   * `initialValue` is a **once-per-mount seed**, not a controlled prop: it is read
+   * only when the component mounts. Passing a different `initialValue` on a later
+   * render does nothing — after the initial seed the value is driven entirely by
+   * emits/`setValue`. To reset to a new initial, remount with a `key`.
+   *
    * The `topic` is fixed for the component's lifetime: passing a different topic on
    * a later render throws. Remount with a `key` if you need to switch topics.
    */
