@@ -2,7 +2,6 @@ import jestPlugin           from 'eslint-plugin-jest';
 import reactPlugin          from 'eslint-plugin-react';
 import testingLibraryPlugin from 'eslint-plugin-testing-library';
 
-/** Files this config targets. */
 const FILES = ['**/*.{js,mjs,cjs,ts,tsx}'];
 
 /**
@@ -33,5 +32,4 @@ export const react = [
   },
 ];
 
-/** Default export: the React layer. */
 export default react;

@@ -7,7 +7,6 @@ import unusedImportsPlugin    from 'eslint-plugin-unused-imports';
 import globals                from 'globals';
 import tseslint               from 'typescript-eslint';
 
-/** Files this config targets. */
 const FILES = ['**/*.{js,mjs,cjs,ts,tsx}'];
 
 /**
@@ -134,5 +133,4 @@ export const base = tseslint.config(
   },
 );
 
-/** Default export: the base config. */
 export default base;

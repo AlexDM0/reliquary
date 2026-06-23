@@ -16,6 +16,9 @@ interface TestEvents {
   count: number;
 }
 
+/** Run queued `setImmediate` callbacks — i.e. let deferred re-entrant emits fire. */
+const flushDeferredEmits = () => new Promise<void>((resolve) => { setImmediate(resolve); });
+
 describe('EventBus', () => {
   let eventBus: EventBus<TestEvents>;
 
@@ -91,15 +94,15 @@ describe('EventBus', () => {
       const late = mock();
       eventBus.on('count', () => {
         calls.push('first');
-        eventBus.on('count', late); // subscribes mid-emit
+        eventBus.on('count', late);
       });
 
       eventBus.emit('count', 1);
       expect(calls).toEqual(['first']);
-      expect(late).not.toHaveBeenCalled(); // not delivered this emit
+      expect(late).not.toHaveBeenCalled();
 
       eventBus.emit('count', 2);
-      expect(late).toHaveBeenCalledTimes(1); // active from the next emit on
+      expect(late).toHaveBeenCalledTimes(1);
       expect(late).toHaveBeenCalledWith(2);
     });
 
@@ -111,8 +114,8 @@ describe('EventBus', () => {
       eventBus.on('count', after);
 
       expect(() => eventBus.emit('count', 1)).toThrow('boom');
-      expect(before).toHaveBeenCalledWith(1); // listeners before the throw ran
-      expect(after).not.toHaveBeenCalled();   // listeners after the throw are skipped
+      expect(before).toHaveBeenCalledWith(1);
+      expect(after).not.toHaveBeenCalled();
     });
   });
 
@@ -123,7 +126,7 @@ describe('EventBus', () => {
       eventBus.on('count', (n) => {
         order.push(`a:${n}`);
         if (n === 1) {
-          eventBus.emit('count', 2); // emitted while 'count' is mid-fire
+          eventBus.emit('count', 2);
         }
       });
       eventBus.on('count', (n) => {
@@ -132,13 +135,10 @@ describe('EventBus', () => {
 
       eventBus.emit('count', 1);
 
-      // emit(1) fully delivers to both listeners before the deferred emit(2) runs —
-      // the two fires never interleave.
+      // emit(1) finishes delivering to both listeners before the deferred emit(2) runs.
       expect(order).toEqual(['a:1', 'b:1']);
 
-      await new Promise<void>((resolve) => { setImmediate(resolve); });
-
-      // The deferred emit then fires, in order.
+      await flushDeferredEmits();
       expect(order).toEqual(['a:1', 'b:1', 'a:2', 'b:2']);
     });
 
@@ -152,11 +152,11 @@ describe('EventBus', () => {
       });
 
       eventBus.emit('count', 1);
-      order.push('after-emit'); // synchronous code after the top-level emit returns
+      order.push('after-emit');
 
       expect(order).toEqual(['fire:1', 'after-emit']);
 
-      await new Promise<void>((resolve) => { setImmediate(resolve); });
+      await flushDeferredEmits();
       expect(order).toEqual(['fire:1', 'after-emit', 'fire:2']);
     });
   });
@@ -213,8 +213,8 @@ describe('EventBus', () => {
     test('a subscriber unsubscribing a not-yet-called one mid-emit skips it', () => {
       const calls: string[] = [];
       let offB = () => {};
-      eventBus.on('count', () => { calls.push('a'); offB(); }); // runs first, removes B
-      offB = eventBus.on('count', () => { calls.push('b'); });  // should be skipped this emit
+      eventBus.on('count', () => { calls.push('a'); offB(); }); // removes B
+      offB = eventBus.on('count', () => { calls.push('b'); });
 
       eventBus.emit('count', 1);
       expect(calls).toEqual(['a']);
@@ -226,8 +226,8 @@ describe('EventBus', () => {
     test('a subscriber unsubscribing an already-called one does not double-fire it', () => {
       const calls: string[] = [];
       let offA = () => {};
-      offA = eventBus.on('count', () => { calls.push('a'); }); // runs first
-      eventBus.on('count', () => { calls.push('b'); offA(); }); // removes A after A ran
+      offA = eventBus.on('count', () => { calls.push('a'); });
+      eventBus.on('count', () => { calls.push('b'); offA(); }); // removes A
 
       eventBus.emit('count', 1);
       expect(calls).toEqual(['a', 'b']);
@@ -252,7 +252,7 @@ describe('EventBus', () => {
     test('a topic can be re-subscribed after its last subscriber leaves', () => {
       const a = mock();
       const off = eventBus.on('count', a);
-      off(); // empties and deletes the topic's subscriber map
+      off();
 
       const b = mock();
       eventBus.on('count', b);

@@ -63,8 +63,7 @@ describe('useEvent', () => {
     act(() => eventBus.emit('ping'));
     act(() => eventBus.emit('ping'));
 
-    // Each void emit forces exactly one re-render (one per emit), so two emits
-    // produce a delta of exactly two — neither is dropped.
+    // One re-render per void emit: two emits → a delta of exactly two (neither dropped).
     expect(result.current).toBeNull();
     expect(renders - before).toBe(2);
   });
@@ -114,7 +113,6 @@ describe('shared instance (the bug this fixes)', () => {
 
     act(() => eventBus.emit('toast', 'shared'));
 
-    // Both hooks are bound to the one bus instance, so both react.
     expect(result.current).toBe('shared');
     expect(spy).toHaveBeenCalledWith('shared');
   });
@@ -176,8 +174,7 @@ describe('useEventCallback', () => {
     rerender();
     rerender();
 
-    // The `[topic]`-dep effect runs once on mount and never re-runs across the
-    // rerenders, so the subscription is created exactly once (no teardown/recreate).
+    // The [topic]-dep effect subscribes once and never re-runs across rerenders.
     expect(onSpy).toHaveBeenCalledTimes(1);
 
     act(() => eventBus.emit('toast', 'once'));
@@ -294,7 +291,6 @@ describe('useSharedState', () => {
   test('a page-level initial value is readable by a deep descendant with no initial (no prop-drilling)', () => {
     const { useSharedState } = setup();
 
-    // Deep child reads the shared value WITHOUT its own initial value.
     const Leaf = () => {
       const [count] = useSharedState('count');
       return <span>leaf:{count}</span>;

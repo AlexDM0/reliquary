@@ -81,7 +81,6 @@ export class EventBus<EventMap> {
     // is reached during iteration is simply skipped.
     subscribers.delete(id);
 
-    // clean up empty topics
     if (subscribers.size === 0) {
       this.topics.delete(topic);
     }
@@ -91,18 +90,13 @@ export class EventBus<EventMap> {
   emit<T extends VoidEventTopic<EventMap>>(topic: T): void;
   emit<T extends DataEventTopic<EventMap>>(topic: T, data: EventMap[T]): void;
   emit<T extends keyof EventMap>(topic: T, data?: EventMap[T]): void {
-    // The overload signatures guarantee `data` matches the topic, so the cast
-    // is safe here (it is `undefined` only for void topics, which want that).
+    // `data` is `undefined` only for void topics, which the overloads enforce — cast is safe.
     this.dispatch(topic, data as EventMap[T]);
   }
 
   private dispatch<T extends keyof EventMap>(topic: T, eventData: EventMap[T]): void {
-    // Re-entrancy: if this topic is already mid-fire (a listener of it is emitting it
-    // again), defer the new emit to a later tick with `setImmediate` instead of
-    // recursing. The stack stays flat, emit order is preserved (deferred emits run in
-    // the order they were made), and any pending synchronous code runs in between.
-    // Relying on delivery order across subscribers is an anti-pattern — see this
-    // package's CLAUDE.md.
+    // A re-entrant emit — fired from a listener of this same topic — is deferred to the
+    // next tick instead of recursing, so it runs after the current fire, in emit order.
     if (this.firing.has(topic)) {
       setImmediate(() => { this.dispatch(topic, eventData); });
       return;
@@ -110,27 +104,28 @@ export class EventBus<EventMap> {
 
     this.firing.add(topic);
     try {
-      // keep the shared state in sync with the event bus, if it is used.
       if (this.state.has(topic)) {
         this.state.set(topic, eventData);
       }
-
-      const subscribers = this.topics.get(topic);
-      if (subscribers) {
-        // Snapshot the subscriber ids so a listener that subscribes to this same
-        // topic while handling the event is not invoked for the in-flight emit
-        // (it becomes active from the next emit). Re-check each id against the live
-        // Map before calling, so a listener removed earlier in this same emit —
-        // by itself or another — is still skipped.
-        for (const id of [...subscribers.keys()]) {
-          const callback = subscribers.get(id);
-          if (callback) {
-            callback(eventData);
-          }
-        }
-      }
+      this.notifySubscribers(topic, eventData);
     } finally {
       this.firing.delete(topic);
+    }
+  }
+
+  private notifySubscribers<T extends keyof EventMap>(topic: T, eventData: EventMap[T]): void {
+    const subscribers = this.topics.get(topic);
+    if (!subscribers) {
+      return;
+    }
+
+    // Iterate a snapshot of ids: a listener that subscribes mid-emit waits until the next
+    // emit, while one unsubscribed mid-emit is skipped (hence the live-Map re-check).
+    for (const id of [...subscribers.keys()]) {
+      const callback = subscribers.get(id);
+      if (callback) {
+        callback(eventData);
+      }
     }
   }
 
