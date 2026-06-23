@@ -45,12 +45,18 @@ bun run release:all
 
 This first runs `bun run verify` — the full stability gate across **all** packages
 (`build → typecheck → lint → test → check:exports`, the last being attw + publint). A
-failure anywhere aborts before *any* package is published. Only then does it publish all
-four with `bun publish` in dependency order: `@reliquary/event-bus` →
-`@reliquary/event-bus-react`, then `@reliquary/eslint-config` →
-`@reliquary/eslint-config-react`. `bun publish` rewrites the `workspace:` protocol to the
-real version (e.g. `workspace:^` → `^1.0.0`), and each package's
-`publishConfig.access: "public"` publishes the scoped packages publicly.
+failure anywhere aborts before *any* package is published. Only then does it publish each
+package in dependency order: `@reliquary/event-bus` → `@reliquary/event-bus-react`, then
+`@reliquary/eslint-config` → `@reliquary/eslint-config-react`. `bun publish` rewrites the
+`workspace:` protocol to the real version (e.g. `workspace:^` → `^1.0.0`), and each
+package's `publishConfig.access: "public"` publishes the scoped packages publicly.
+
+Publishing is **idempotent and re-runnable.** Each package's publish step
+(`scripts/release-package.ts`) checks whether its `<name>@<version>` is already on the
+registry and skips the publish if so. So if a `release:all` run dies partway (network,
+auth prompt, a flaky package), just run it again: already-published packages are passed
+over and only the missing ones publish. (npm versions are immutable — without this, a
+re-run would 403 on the first already-published package and abort.)
 
 ### Releasing a single package
 
@@ -67,10 +73,11 @@ bun run release:eslint-config-react
 Releasing a dependent package alone (`event-bus-react`, `eslint-config-react`) assumes the
 base package it peers on is already published at a matching version.
 
-Each package's `release:npm` script tags its release after a successful publish with an
-annotated tag named `<package>@<version>` (e.g. `@reliquary/event-bus@1.0.0`), so you can
-`git checkout` the exact repo state behind any single package's release. Tags are created
-**locally** — push them once the release looks good:
+Each package is tagged with an annotated tag named `<package>@<version>` (e.g.
+`@reliquary/event-bus@1.0.0`), so you can `git checkout` the exact repo state behind any
+single package's release. The tag is created whenever it is missing — including for a
+package that was already published on an earlier run — so a re-run reconciles tags too.
+Tags are created **locally** — push them once the release looks good:
 
 ```sh
 git push --follow-tags
