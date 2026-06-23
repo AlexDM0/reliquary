@@ -1,0 +1,21 @@
+/* The home hero name ("reliquary") defaults to the same size as the tagline text
+   below it, which leaves the title looking undersized. Bump it up across the
+   responsive breakpoints so the name reads as the headline. */
+.VPHero .name {
+  font-size: 40px;
+  line-height: 48px;
+}
+
+@media (min-width: 640px) {
+  .VPHero .name {
+    font-size: 60px;
+    line-height: 68px;
+  }
+}
+
+@media (min-width: 960px) {
+  .VPHero .name {
+    font-size: 72px;
+    line-height: 80px;
+  }
+}
