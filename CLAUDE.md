@@ -28,6 +28,39 @@ Build event-bus core before react (`bun run build` enforces order). See `README.
   permission to commit. Make and verify the changes, report what changed, and leave
   them unstaged for review. Only stage/commit when the message explicitly says so
   (e.g. "commit this", "commit your work").
+- **When you do commit, make clean commits.** Group related changes together so each
+  commit is one coherent change with a concise but descriptive message. Don't lump
+  unrelated changes into a single commit. Keep messages short (a tight subject line) and
+  never include AI references — no `Co-Authored-By: Claude`, no "Generated with" footer.
+
+## Reviewing and fixing bugs — sceptical, red tests, written report
+
+- **Be sceptical.** On a review request, actively hunt for bugs and incorrect
+  assumptions — don't trust the code's stated intent. **Grill the requester** (ask)
+  whenever there are uncertainties instead of guessing.
+- **Review order:** review *all the code* first; only once you're satisfied with the code
+  do you review the tests — scenarios and coverage. Coverage need not be 100%, but every
+  sensible case must be covered.
+- **Scale up when needed:** if a lot of files are in scope, use ultracode (a multi-agent
+  workflow). Any subagents spawned for a review must be **opus** agents.
+- **Reproduce every bug with a red test:** write failing (red) unit tests, one per bug, in
+  `<file>.review.spec.ts` files. **During a review the only code you may change or write is
+  failing tests — never touch production code.**
+- **Output `REVIEW_<ISOString>.md`** with all findings and recommendations.
+- **After fixes land** (by me or by you), delete the `.review.spec.ts` files and decide per
+  case whether each belongs in the existing suite — keep it only if it fills a coverage gap
+  or guards a regression; otherwise drop it.
+- **On a bug-fix request with no existing test:** write the failing test first, fix the
+  bug, confirm it goes green, then review your own work and clean up the same way (fold
+  worthwhile cases into the real suite, remove the scratch `.review.spec.ts`).
+- **No comment or test may reference historical states of the codebase.** Describe only
+  the current ("actual") behaviour — never "this used to…" or "previously…".
+
+## Improve the way of working
+
+After any completed task, evaluate whether the process could be optimised and suggest
+changes to the way of working — typically an addition to this `CLAUDE.md`. Keep the
+suggestion short; skip it when there's genuinely nothing to improve.
 
 ## Documentation must stay in sync with the code ("actual")
 
@@ -35,17 +68,23 @@ Build event-bus core before react (`bun run build` enforces order). See `README.
 behaviour, build, or structure, update every affected doc in the *same* change and keep
 it accurate — never leave docs describing how things used to work.
 
+"Docs" includes the layered `CLAUDE.md` files — root, family (`packages/<family>/CLAUDE.md`),
+and package (`packages/<family>/<package>/CLAUDE.md`) — which record accepted design
+decisions. When a change touches a behaviour one of them describes, update the file at the
+right level in the same change (see the **Design decisions** section below).
+
 Doc ↔ code map:
 
 | When you change… | Update… |
 | --- | --- |
-| `packages/event-bus/event-bus/src` (core API/behaviour) | `packages/event-bus/event-bus/README.md`, `packages/event-bus/docs/event-bus.md`, `packages/event-bus/docs/event-flow.md` |
-| `packages/event-bus/event-bus-react/src` (hooks) | `packages/event-bus/event-bus-react/README.md`, `packages/event-bus/docs/event-bus-react.md`, `packages/event-bus/docs/react-data-flow.md` |
+| `packages/event-bus/event-bus/src` (core API/behaviour) | `packages/event-bus/event-bus/README.md`, `packages/event-bus/docs/event-bus.md`, `packages/event-bus/docs/event-flow.md`; if it touches an accepted behaviour, `packages/event-bus/event-bus/CLAUDE.md` (or the family `packages/event-bus/CLAUDE.md` for a shared invariant) |
+| `packages/event-bus/event-bus-react/src` (hooks) | `packages/event-bus/event-bus-react/README.md`, `packages/event-bus/docs/event-bus-react.md`, `packages/event-bus/docs/react-data-flow.md`; if it touches an accepted behaviour, `packages/event-bus/event-bus-react/CLAUDE.md` (or the family `packages/event-bus/CLAUDE.md` for a shared invariant) |
 | `packages/eslint/eslint-config/index.js` (base lint rules) | `packages/eslint/eslint-config/README.md`, `packages/eslint/README.md`, `packages/eslint/docs/eslint-config.md`, `README.md` |
 | `packages/eslint/eslint-config-react/index.js` (react lint rules) | `packages/eslint/eslint-config-react/README.md`, `packages/eslint/README.md`, `packages/eslint/docs/eslint-config.md`, `README.md` |
 | Conceptual model, when-to-use, lossy/shared-state semantics | `packages/event-bus/docs/concepts.md` |
 | A family's package set, structure, or overview | the family README (`packages/<family>/README.md`) |
-| Package names, exports, deps, build, tooling | `README.md`, `packages/event-bus/docs/architecture.md`, the relevant package README, **this `CLAUDE.md`** |
+| An accepted design decision (new, changed, or removed) | the right-level `CLAUDE.md` — a cross-cutting invariant in the family `packages/<family>/CLAUDE.md`, a package-specific one in that package's `CLAUDE.md`, monorepo-wide guidance in the root `CLAUDE.md` |
+| Package names, exports, deps, build, tooling | `README.md`, `packages/event-bus/docs/architecture.md`, the relevant package README, **the relevant `CLAUDE.md`** (root, family, or package) |
 | Any Mermaid diagram | Re-validate it — every diagram must render. |
 
 A **pre-commit hook** (`.githooks/pre-commit`, wired via `core.hooksPath`) enforces this:
@@ -54,32 +93,23 @@ blocked, and the hook runs `build → typecheck → lint → test` so documented
 valid. Bypass only deliberately with `SKIP_DOC_CHECK=1 git commit …` or `git commit --no-verify`.
 After updating any doc, re-read it to confirm it matches the current code.
 
-## Design decisions (event-bus) — accepted, don't "fix"
+## Design decisions — accepted, don't "fix"
 
-These are deliberate and have been reviewed. Don't file them as bugs or "harden" them
-away; preserve the behaviour (and the reasoning) on any change to the surrounding code.
+Per-package design decisions (deliberate, reviewed behaviours — don't file them as bugs
+or "harden" them away; preserve the behaviour *and* the reasoning on any change to the
+surrounding code) live in each package's own `CLAUDE.md`, loaded automatically when you
+work in that package:
 
-- **`undefined` = "no data" is the core invariant.** A data payload is rejected if its
-  type *includes* `undefined` (see `packages/event-bus/event-bus/src/types.ts`): at
-  runtime `undefined` is the marker for a void (no-data) topic, so an `undefined`-bearing
-  data payload would be ambiguous. Use `void` for no-data topics, or `null` for an
-  "absent but present" value. `InMemorySharedStateManager.get()` follows from this — it
-  rejects a stored `undefined` as "no data" (keying on `value === undefined`), while
-  `has()` reports raw map presence. The two intentionally disagree for a topic explicitly
-  set to `undefined`: `has() === true` yet `get()` throws.
-- **`any` opts out of the void/data discrimination.** An `any` payload satisfies both
-  `VoidEventTopic` and `DataEventTopic` — inherent to `any`, by definition. Don't try to
-  exclude it. In tests, reach edge cases with a typed `unknown` topic, not `EventBus<any>`.
-- **`unknown` is the sanctioned generic escape hatch.** `unknown` is treated as a *data*
-  payload (so `get`/`emit` accept it) and the user owns the cast on read/emit. Because
-  `unknown` admits `undefined`, emitting `undefined` on an `unknown` topic is treated as a
-  void-style signal by `useEvent` (the value does not update) — consistent with the
-  `undefined` = "no data" rule. The user owns this contract.
-- **The render-phase write in `useSharedState`'s `useState` initializer is intentional.**
-  It is minimised to a single run-once seed (no `storedRef`). The residual render-phase
-  write is required so the seeded value is visible synchronously to later-rendered
-  descendants; removing it fully would need `useSyncExternalStore`, which conflicts with
-  that requirement.
+- `packages/event-bus/CLAUDE.md` — event-bus family: cross-cutting invariants shared by
+  both packages (`undefined` = "no data", the `unknown` escape hatch, events-are-lossy).
+- `packages/event-bus/event-bus/CLAUDE.md` — core: type/payload semantics, emit/delivery
+  (fail-fast, fixed delivery set), shared-state invariants.
+- `packages/event-bus/event-bus-react/CLAUDE.md` — React hooks: render-phase seed,
+  render→effect window, once-per-mount `initialValue`, shared-state retention.
+
+When you make or change an accepted decision, record it at the right level — a shared
+invariant in the family `CLAUDE.md`, a package-specific one in that package's `CLAUDE.md`
+(not here). If a decision starts overlapping both packages, hoist it to the family file.
 
 ## Bun
 
