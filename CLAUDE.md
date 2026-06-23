@@ -32,6 +32,11 @@ Build event-bus core before react (`bun run build` enforces order). See `README.
   commit is one coherent change with a concise but descriptive message. Don't lump
   unrelated changes into a single commit. Keep messages short (a tight subject line) and
   never include AI references — no `Co-Authored-By: Claude`, no "Generated with" footer.
+- **Every commit is a green snapshot.** A commit's tests must pass against that same
+  commit's code — never land tests whose implementation only arrives in a later commit.
+  When one file mixes changes destined for different commits (e.g. new tests plus unrelated
+  tidy-ups), split it: temporarily lift the dependent tests out, commit the rest, then
+  restore and commit the feature together with its tests.
 
 ## Reviewing and fixing bugs — sceptical, red tests, written report
 
@@ -127,6 +132,8 @@ A **pre-commit hook** (`.githooks/pre-commit`, wired via `core.hooksPath`) enfor
 a commit that touches `packages/*/*/src` or a `package.json` but updates no documentation is
 blocked, and the hook runs `build → typecheck → lint → test` so documented behaviour stays
 valid. Bypass only deliberately with `SKIP_DOC_CHECK=1 git commit …` or `git commit --no-verify`.
+A readability-only or test-only commit that changes no documented behaviour is a legitimate
+`SKIP_DOC_CHECK=1` case (the hook still runs build → typecheck → lint → test).
 After updating any doc, re-read it to confirm it matches the current code.
 
 ## Design decisions — accepted, don't "fix"
