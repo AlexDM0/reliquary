@@ -25,6 +25,7 @@ export default withMermaid(defineConfig({
   rewrites: {
     'docs/index.md': 'index.md',
     'packages/event-bus/docs/:page': 'event-bus/:page',
+    'packages/eslint/docs/:page': 'eslint/:page',
   },
   title: 'reliquary',
   description: 'A collection of small, type-safe npm packages.',
@@ -36,6 +37,7 @@ export default withMermaid(defineConfig({
   themeConfig: {
     nav: [
       { text: 'event-bus', link: '/event-bus/' },
+      { text: 'eslint', link: '/eslint/' },
     ],
     sidebar: {
       '/event-bus/': [
@@ -58,6 +60,14 @@ export default withMermaid(defineConfig({
           items: [
             { text: 'Guide', link: '/event-bus/event-bus-react' },
             { text: 'Data flow', link: '/event-bus/react-data-flow' },
+          ],
+        },
+      ],
+      '/eslint/': [
+        {
+          text: 'eslint',
+          items: [
+            { text: 'Guide', link: '/eslint/eslint-config' },
           ],
         },
       ],
