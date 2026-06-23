@@ -55,12 +55,48 @@ Build event-bus core before react (`bun run build` enforces order). See `README.
   worthwhile cases into the real suite, remove the scratch `.review.spec.ts`).
 - **No comment or test may reference historical states of the codebase.** Describe only
   the current ("actual") behaviour — never "this used to…" or "previously…".
+- **No `any` in tests.** When a test needs an escape-hatch type to reach an edge case, use
+  a typed mock type (e.g. a local `interface MockEvents { topic: unknown }`) rather than
+  `any`. `unknown` is allowed; `any` is lazy test writing — it opts out of type checking
+  entirely and hides whether the test exercises the typed API. In `@reliquary/event-bus`
+  an `unknown` topic is still a `DataEventTopic` (the sanctioned generic escape hatch), so
+  it reaches `state.get`/`set` paths the strict typed API forbids — use it instead of
+  `EventBus<any>`.
+
+## Code style — self-documenting over comments
+
+Prioritise readable, self-documenting code over comments — in production code **and tests**.
+
+- Let well-named functions, methods, and variables carry intent. Prefer extracting a named
+  helper (e.g. `notifySubscribers(...)`, `flushDeferredEmits()`) over a comment that narrates
+  a block.
+- Keep comments only for the non-obvious **why**: rationale, subtle invariants, surprising
+  mechanisms (why a `setImmediate` defer, why a snapshot-then-recheck loop, what a test's spy
+  plumbing proves). Delete comments that merely restate what the code does.
+- In tests, lean on descriptive `test(...)` titles and meaningful local names
+  (`before`/`after`/`late`/`order`) instead of inline narration — a test should read as its
+  own spec.
+- Avoid duplication, but only up to the point where removing it still reads clearly. A shared
+  helper that erases repeated boilerplate is good; over-extracting two short,
+  one-field-different setups into harder-to-follow indirection is not. Self-contained beats
+  clever.
 
 ## Improve the way of working
 
 After any completed task, evaluate whether the process could be optimised and suggest
 changes to the way of working — typically an addition to this `CLAUDE.md`. Keep the
 suggestion short; skip it when there's genuinely nothing to improve.
+
+**Project memory lives in `CLAUDE.md`.** Record durable preferences, conventions, and
+learnings for this project in the checked-in `CLAUDE.md` (root, family, or package per the
+layering rules) so they stay portable and travel with the repo — not in any external or
+per-user memory store.
+
+**`consolidate` (experimental).** When I say "consolidate", fold the patterns established
+in the current conversation into the way of working — persist them at the right level
+(usually an addition to the relevant `CLAUDE.md`: root, family, or package per the layering
+rules). If you're not confident which parts of the discussion I'm referring to, ask before
+writing.
 
 ## Documentation must stay in sync with the code ("actual")
 
