@@ -10,6 +10,7 @@ import {
   describe,
   expect,
   mock,
+  spyOn,
   test
 } from 'bun:test';
 import { StrictMode, useState } from 'react';
@@ -62,8 +63,10 @@ describe('useEvent', () => {
     act(() => eventBus.emit('ping'));
     act(() => eventBus.emit('ping'));
 
+    // Each void emit forces exactly one re-render (one per emit), so two emits
+    // produce a delta of exactly two — neither is dropped.
     expect(result.current).toBeNull();
-    expect(renders).toBeGreaterThan(before + 1);
+    expect(renders - before).toBe(2);
   });
 
   test('resubscribes when topic changes and drops the old topic', () => {
@@ -162,6 +165,7 @@ describe('useEventCallback', () => {
   test('does not re-subscribe on every render', () => {
     const { eventBus, useEventCallback } = setup();
     const spy = mock();
+    const onSpy = spyOn(eventBus, 'on');
 
     const { rerender } = renderHook(() => {
       const [, force] = useState(0);
@@ -171,6 +175,11 @@ describe('useEventCallback', () => {
 
     rerender();
     rerender();
+
+    // The `[topic]`-dep effect runs once on mount and never re-runs across the
+    // rerenders, so the subscription is created exactly once (no teardown/recreate).
+    expect(onSpy).toHaveBeenCalledTimes(1);
+
     act(() => eventBus.emit('toast', 'once'));
 
     expect(spy).toHaveBeenCalledTimes(1);
@@ -412,7 +421,24 @@ describe('StrictMode (dev double-invoke)', () => {
 
   test('useEvent reflects the latest payload exactly once', () => {
     const { eventBus, useEvent } = setup();
+
+    // Track net-active subscriptions for the topic: each `on` adds one, each call
+    // to the unsubscribe it returns removes one. StrictMode's double-invoke must
+    // net out to a single live subscription.
+    let active = 0;
+    const realOn = eventBus.on.bind(eventBus);
+    spyOn(eventBus, 'on').mockImplementation((topic, callback) => {
+      const unsubscribe = realOn(topic as 'toast', callback as never);
+      active += 1;
+      return () => {
+        active -= 1;
+        unsubscribe();
+      };
+    });
+
     const { result } = renderHook(() => useEvent('toast'), { wrapper: StrictMode });
+
+    expect(active).toBe(1);
 
     act(() => eventBus.emit('toast', 'hi'));
 

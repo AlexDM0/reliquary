@@ -47,6 +47,10 @@ describe('EventBus', () => {
 
     test('does nothing when emitting a topic with no subscribers', () => {
       expect(() => eventBus.emit('login', { userId: '1' })).not.toThrow();
+
+      // No subscribers and an unregistered topic: emit leaves shared state untouched.
+      expect(eventBus.state.has('login')).toBe(false);
+      expect(() => eventBus.state.get('login')).toThrow(/No value stored for topic/);
     });
 
     test('only notifies subscribers of the emitted topic', () => {
@@ -336,6 +340,36 @@ describe('EventBus', () => {
 
       expect(customBus.state).toBe(custom);
       expect(calls).toEqual([['count', 3]]);
+    });
+
+    test('emit routes shared-state sync through the injected manager', () => {
+      const custom: SharedStateManager<TestEvents> = {
+        get:   () => undefined as never,
+        set:   mock(),
+        has:   mock(() => true),
+        reset: mock(),
+      };
+      const customBus = new EventBus<TestEvents>({ state: custom });
+
+      customBus.emit('count', 3);
+
+      expect(custom.has).toHaveBeenCalledWith('count');
+      expect(custom.set).toHaveBeenCalledWith('count', 3);
+    });
+
+    test('emit does not set on the injected manager when has() returns false', () => {
+      const custom: SharedStateManager<TestEvents> = {
+        get:   () => undefined as never,
+        set:   mock(),
+        has:   mock(() => false),
+        reset: mock(),
+      };
+      const customBus = new EventBus<TestEvents>({ state: custom });
+
+      customBus.emit('count', 3);
+
+      expect(custom.has).toHaveBeenCalledWith('count');
+      expect(custom.set).not.toHaveBeenCalled();
     });
 
     test('the default manager is an InMemorySharedStateManager', () => {
